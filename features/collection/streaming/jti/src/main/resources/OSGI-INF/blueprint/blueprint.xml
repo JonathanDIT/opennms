@@ -15,9 +15,12 @@
 
     <reference id="collectionAgentFactory" interface="org.opennms.netmgt.collection.api.CollectionAgentFactory" availability="mandatory"/>
 
+    <reference id="interfaceToNodeCache" interface="org.opennms.netmgt.dao.api.InterfaceToNodeCache" availability="mandatory"/>
+
     <bean id="jtiListener" class="org.opennms.netmgt.collection.streaming.jti.JtiManager" init-method="init" destroy-method="destroy">
         <property name="persisterFactory" ref="persisterFactory"/>
         <property name="collectionAgentFactory" ref="collectionAgentFactory"/>
+        <property name="interfaceToNodeCache" ref="interfaceToNodeCache"/>
     </bean>
 
 </blueprint>

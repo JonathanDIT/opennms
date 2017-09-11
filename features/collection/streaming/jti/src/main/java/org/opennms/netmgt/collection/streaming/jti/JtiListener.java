@@ -62,7 +62,7 @@ import java.util.function.Consumer;
 public class JtiListener {
     private static final Logger LOG = LoggerFactory.getLogger(JtiListener.class);
 
-    private static final ExtensionRegistry s_registry = ExtensionRegistry.newInstance();
+    protected static final ExtensionRegistry s_registry = ExtensionRegistry.newInstance();
     static {
         InternalLoggerFactory.setDefaultFactory(Slf4JLoggerFactory.INSTANCE);
         CpuMemoryUtilizationOuterClass.registerAllExtensions(s_registry);
@@ -117,7 +117,10 @@ public class JtiListener {
     }
 
     public void stop() throws InterruptedException {
-        future.channel().closeFuture().sync();
+        LOG.info("Closing channel...");
+        ChannelFuture cf = future.channel().closeFuture();
+        LOG.info("Closing boss group...");
         bossGroup.shutdownGracefully().sync();
+        cf.sync();
     }
 }

@@ -84,6 +84,8 @@ public class JtiListenerTest {
         assertEquals("ge-0/0/0", interfaceInfos.getIfName());
         assertEquals(124827820, interfaceInfos.getIngressStats().getIfOctets());
         assertEquals(194503622, interfaceInfos.getEgressStats().getIfOctets());
+
+        listener.stop();
     }
 
 }

@@ -335,6 +335,8 @@
 
             <!-- IFTTT Integration -->
             <feature>ifttt-integration</feature>
+
+            <feature>collection-streaming-jti</feature>
           </features>
         </configuration>
       </plugin>
@@ -748,6 +750,13 @@
     <dependency>
       <groupId>org.opennms.core.ipc.rpc</groupId>
       <artifactId>org.opennms.core.ipc.rpc.commands</artifactId>
+      <version>${project.version}</version>
+      <type>pom</type>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.opennms.features.collection.streaming</groupId>
+      <artifactId>org.opennms.features.collection.streaming.jti</artifactId>
       <version>${project.version}</version>
       <type>pom</type>
       <scope>provided</scope>
