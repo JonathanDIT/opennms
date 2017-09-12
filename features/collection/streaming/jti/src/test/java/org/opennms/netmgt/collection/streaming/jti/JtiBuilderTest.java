@@ -42,6 +42,7 @@ import static org.junit.Assert.assertEquals;
 public class JtiBuilderTest {
 
     @Test
+    @Ignore
     public void canRebuildJtiMessage() throws IOException {
         final byte[] jtiMsgBytes = Resources.toByteArray(Resources.getResource("jti_15.1F4_ifd_ae_40000.raw"));
         System.err.println(jtiMsgBytes.length + " bytes");
