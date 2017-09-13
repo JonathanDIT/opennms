@@ -11,6 +11,11 @@
   <packaging>pom</packaging>
   <name>OpenNMS :: Features :: Collection :: Streaming</name>
   <modules>
-    <module>jti</module>
+    <module>api</module>
+    <module>daemon</module>
+    <module>ipc</module>
+    <module>itests</module>
+    <module>jti-adapter</module>
+    <module>udp-listener</module>
   </modules>
 </project>

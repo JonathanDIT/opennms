@@ -1,8 +1,8 @@
 /*******************************************************************************
  * This file is part of OpenNMS(R).
  *
- * Copyright (C) 2016 The OpenNMS Group, Inc.
- * OpenNMS(R) is Copyright (C) 1999-2016 The OpenNMS Group, Inc.
+ * Copyright (C) 2017-2017 The OpenNMS Group, Inc.
+ * OpenNMS(R) is Copyright (C) 1999-2017 The OpenNMS Group, Inc.
  *
  * OpenNMS(R) is a registered trademark of The OpenNMS Group, Inc.
  *
@@ -26,17 +26,30 @@
  *     http://www.opennms.com/
  *******************************************************************************/
 
-package org.opennms.core.ipc.sink.api;
+package org.opennms.netmgt.collection.streaming.model;
 
-/**
- * Implemented by consumers of a particular {@link SinkModule}.
- *
- * @author jwhite
- */
-public interface MessageConsumer<S extends Message, T extends Message> {
+import org.opennms.core.ipc.sink.api.Message;
+import org.opennms.core.utils.LocationUtils;
 
-    SinkModule<S, T> getModule();
+import java.net.DatagramPacket;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 
-    void handleMessage(T messageLog);
+public class TelemetryMessage implements Message {
+    private final InetSocketAddress source;
+    private final ByteBuffer buffer;
 
+    public TelemetryMessage(InetSocketAddress source, ByteBuffer buffer) {
+        this.source = source;
+        this.buffer = buffer;
+    }
+
+    public InetSocketAddress getSource() {
+        return source;
+    }
+
+    public ByteBuffer getBuffer() {
+        return buffer;
+    }
 }

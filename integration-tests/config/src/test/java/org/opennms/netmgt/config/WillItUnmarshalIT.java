@@ -53,6 +53,7 @@ import org.opennms.netmgt.alarmd.northbounder.snmptrap.SnmpTrapNorthbounderConfi
 import org.opennms.netmgt.alarmd.northbounder.syslog.SyslogNorthbounderConfig;
 import org.opennms.netmgt.alarmd.northbounder.bsf.BSFNorthbounderConfig;
 import org.opennms.netmgt.alarmd.northbounder.drools.DroolsNorthbounderConfig;
+import org.opennms.netmgt.collection.streaming.config.TelemetrydConfiguration;
 import org.opennms.netmgt.config.ackd.AckdConfiguration;
 import org.opennms.netmgt.config.actiond.ActiondConfiguration;
 import org.opennms.netmgt.config.ami.AmiConfig;
@@ -278,6 +279,7 @@ public class WillItUnmarshalIT {
         addFile(Source.EXAMPLE, "rancid-configuration.xml", RancidConfiguration.class, Impl.JAXB);
         addFile(Source.CONFIG, "microblog-configuration.xml", MicroblogConfiguration.class, Impl.JAXB);
         addFile(Source.CONFIG, "snmp-asset-adapter-configuration.xml", SnmpAssetAdapterConfiguration.class, Impl.JAXB);
+        addFile(Source.CONFIG, "telemetryd-configuration.xml", TelemetrydConfiguration.class, Impl.JAXB);
         addFile(Source.CONFIG, "jdbc-datacollection-config.xml", JdbcDataCollectionConfig.class, Impl.JAXB);
         addFile(Source.CONFIG, "remote-repository.xml", RemoteRepositoryConfig.class, Impl.JAXB);
         addFile(Source.CONFIG, "vmware-config.xml", VmwareConfig.class, Impl.JAXB);

@@ -1,8 +1,8 @@
 /*******************************************************************************
  * This file is part of OpenNMS(R).
  *
- * Copyright (C) 2016 The OpenNMS Group, Inc.
- * OpenNMS(R) is Copyright (C) 1999-2016 The OpenNMS Group, Inc.
+ * Copyright (C) 2017-2017 The OpenNMS Group, Inc.
+ * OpenNMS(R) is Copyright (C) 1999-2017 The OpenNMS Group, Inc.
  *
  * OpenNMS(R) is a registered trademark of The OpenNMS Group, Inc.
  *
@@ -26,17 +26,19 @@
  *     http://www.opennms.com/
  *******************************************************************************/
 
-package org.opennms.core.ipc.sink.api;
+package org.opennms.netmgt.collection.streaming.api;
 
 /**
- * Implemented by consumers of a particular {@link SinkModule}.
+ * Interface used by the daemon to manage listeners.
+ *
+ * When running a listener should listen for messages from some external source and
+ * invoke the {@link Dispatcher} when messages are received.
  *
  * @author jwhite
  */
-public interface MessageConsumer<S extends Message, T extends Message> {
+public interface Listener {
 
-    SinkModule<S, T> getModule();
+    void start() throws InterruptedException;
 
-    void handleMessage(T messageLog);
-
+    void stop() throws InterruptedException;
 }

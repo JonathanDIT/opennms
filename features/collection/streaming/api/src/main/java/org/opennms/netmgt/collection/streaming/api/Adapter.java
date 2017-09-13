@@ -1,8 +1,8 @@
 /*******************************************************************************
  * This file is part of OpenNMS(R).
  *
- * Copyright (C) 2016 The OpenNMS Group, Inc.
- * OpenNMS(R) is Copyright (C) 1999-2016 The OpenNMS Group, Inc.
+ * Copyright (C) 2017-2017 The OpenNMS Group, Inc.
+ * OpenNMS(R) is Copyright (C) 1999-2017 The OpenNMS Group, Inc.
  *
  * OpenNMS(R) is a registered trademark of The OpenNMS Group, Inc.
  *
@@ -26,17 +26,22 @@
  *     http://www.opennms.com/
  *******************************************************************************/
 
-package org.opennms.core.ipc.sink.api;
+package org.opennms.netmgt.collection.streaming.api;
+
+import org.opennms.netmgt.collection.api.CollectionSet;
+import org.opennms.netmgt.collection.streaming.model.TelemetryMessage;
+import org.opennms.netmgt.collection.streaming.model.TelemetryMessageDTO;
+import org.opennms.netmgt.collection.streaming.model.TelemetryMessageLogDTO;
+
+import java.io.IOException;
 
 /**
- * Implemented by consumers of a particular {@link SinkModule}.
+ * Responsible for building a {@link CollectionSet} for the given {@link TelemetryMessageDTO}.
  *
  * @author jwhite
  */
-public interface MessageConsumer<S extends Message, T extends Message> {
+public interface Adapter {
 
-    SinkModule<S, T> getModule();
-
-    void handleMessage(T messageLog);
+    CollectionSet convertToCollectionSet(TelemetryMessageLogDTO messageLog, TelemetryMessageDTO message) throws Exception;
 
 }
