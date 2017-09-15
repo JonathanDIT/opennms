@@ -15,7 +15,7 @@
         <rra>RRA:MIN:0.5:288:366</rra>
       </rrd>
 
-      <adapter name="JTI-GBP" class-name="org.opennms.netmgt.collection.streaming.jti.JtiGbpAdapter">
+      <adapter name="JTI-GPB" class-name="org.opennms.netmgt.collection.streaming.jti.JtiGpbAdapter">
         <parameter key="script" value="${install.dir}/etc/telemetryd-adapters/junos-telemetry-interface.groovy" />
       </adapter>
     </package>

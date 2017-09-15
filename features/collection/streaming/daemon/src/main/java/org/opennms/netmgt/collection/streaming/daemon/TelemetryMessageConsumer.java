@@ -111,6 +111,7 @@ public class TelemetryMessageConsumer implements MessageConsumer<TelemetryMessag
         final Package pkg = getPackageFor(messageLog);
         if (pkg == null) {
             LOG.warn("No matching package found for message. Ignoring.");
+            return;
         }
 
         // Setup auxiliary objects needed by the persister

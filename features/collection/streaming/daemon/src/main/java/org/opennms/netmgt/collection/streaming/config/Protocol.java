@@ -79,7 +79,7 @@ public class Protocol implements TelemetryProtocol {
     }
 
     public Boolean getEnabled() {
-        return enabled != null ? enabled : false;
+        return enabled != null ? enabled : true;
     }
 
     public void setEnabled(Boolean enabled) {

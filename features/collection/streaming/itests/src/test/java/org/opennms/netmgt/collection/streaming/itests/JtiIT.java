@@ -183,7 +183,6 @@ public class JtiIT {
         Protocol jtiProtocol = new Protocol();
         jtiProtocol.setName("JTI");
         jtiProtocol.setDescription("Junos Telemetry Interface (JTI)");
-        jtiProtocol.setEnabled(true);
         telemetrydConfig.getProtocols().add(jtiProtocol);
 
         Listener udpListener = new Listener();

@@ -91,7 +91,6 @@ public class JtiClient {
 
     }
 
-    @Ignore
     @Test
     public void canSendJtiMessage() throws IOException {
         TelemetryTop.TelemetryStream jtiMsg = buildJtiMessage("192.168.2.1", "eth0", 100, 100);

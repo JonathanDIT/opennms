@@ -870,6 +870,22 @@
           </exclusion>
         </exclusions>
       </dependency>
+    <!-- Telemetryd -->
+    <dependency>
+      <groupId>org.opennms.features.collection.streaming</groupId>
+      <artifactId>org.opennms.features.collection.streaming.udp-listener</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.opennms.features.collection.streaming</groupId>
+      <artifactId>org.opennms.features.collection.streaming.jti-adapter</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.opennms.features.collection.streaming</groupId>
+      <artifactId>org.opennms.features.collection.streaming.daemon</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <pluginRepositories>

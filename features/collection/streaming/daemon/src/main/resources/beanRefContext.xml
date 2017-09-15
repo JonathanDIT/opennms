@@ -3,7 +3,7 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans-4.2.xsd" default-lazy-init="true">
 
-    <bean id="telemetryDaemonContext" class="org.springframework.context.support.ClassPathXmlApplicationContext">
+    <bean id="telemetrydContext" class="org.springframework.context.support.ClassPathXmlApplicationContext">
      <constructor-arg>
        <list>
          <value>META-INF/opennms/applicationContext-telemetryDaemon.xml</value>
