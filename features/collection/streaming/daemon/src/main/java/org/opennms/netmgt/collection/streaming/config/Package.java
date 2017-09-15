@@ -41,7 +41,7 @@ import java.util.Objects;
 
 @XmlRootElement(name="package")
 @XmlAccessorType(XmlAccessType.NONE)
-public class Package implements Serializable {
+public class Package {
 
     /**
      * Name or identifier for this package.
@@ -61,9 +61,6 @@ public class Package implements Serializable {
      */
     @XmlElement(name="rrd")
     private Rrd rrd;
-
-    @XmlElement(name="adapter")
-    private List<Adapter> adapters = new ArrayList<>();
 
     public String getName() {
         return name;
@@ -89,14 +86,6 @@ public class Package implements Serializable {
         this.rrd = rrd;
     }
 
-    public List<Adapter> getAdapters() {
-        return adapters;
-    }
-
-    public void setAdapters(List<Adapter> adapters) {
-        this.adapters = adapters;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -104,13 +93,12 @@ public class Package implements Serializable {
         Package aPackage = (Package) o;
         return Objects.equals(name, aPackage.name) &&
                 Objects.equals(filter, aPackage.filter) &&
-                Objects.equals(rrd, aPackage.rrd) &&
-                Objects.equals(adapters, aPackage.adapters);
+                Objects.equals(rrd, aPackage.rrd);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, filter, rrd, adapters);
+        return Objects.hash(name, filter, rrd);
     }
 
     @Override
@@ -119,7 +107,6 @@ public class Package implements Serializable {
                 "name='" + name + '\'' +
                 ", filter=" + filter +
                 ", rrd=" + rrd +
-                ", adapters=" + adapters +
                 '}';
     }
 }

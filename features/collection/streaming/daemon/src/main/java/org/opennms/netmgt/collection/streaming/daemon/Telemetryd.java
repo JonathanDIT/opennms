@@ -85,23 +85,25 @@ public class Telemetryd implements SpringServiceDaemon {
     @Override
     public synchronized void start() throws Exception {
         if (consumers.size() > 0) {
-            throw new IllegalStateException("Stop the service first.");
+            throw new IllegalStateException(NAME + " is already started.");
         }
         final TelemetrydConfiguration config = telemetrydConfigDao.getContainer().getObject();
+        final AutowireCapableBeanFactory beanFactory = applicationContext.getAutowireCapableBeanFactory();
 
         for (Protocol protocol : config.getProtocols()) {
             if (!protocol.getEnabled()) {
                 LOG.debug("Skipping disabled protocol: {}", protocol.getName());
                 continue;
             }
-
             LOG.debug("Setting up protocol: {}", protocol.getName());
 
             final TelemetrySinkModule sinkModule = new TelemetrySinkModule(protocol);
-            applicationContext.getAutowireCapableBeanFactory().autowireBean(sinkModule);
+            beanFactory.autowireBean(sinkModule);
+            beanFactory.initializeBean(sinkModule, "sinkModule");
 
             final TelemetryMessageConsumer consumer = new TelemetryMessageConsumer(protocol, sinkModule);
-            applicationContext.getAutowireCapableBeanFactory().autowireBean(consumer);
+            beanFactory.autowireBean(consumer);
+            beanFactory.initializeBean(consumer, "consumer");
             consumers.add(consumer);
 
             final AsyncDispatcher<TelemetryMessage> dispatcher = messageDispatcherFactory.createAsyncDispatcher(sinkModule);
@@ -113,11 +115,13 @@ public class Telemetryd implements SpringServiceDaemon {
 
         // Start the consumers
         for (TelemetryMessageConsumer consumer : consumers) {
+            LOG.info("Starting consumer for {} protocol.", consumer.getProtocol().getName());
             messageConsumerManager.registerConsumer(consumer);
         }
 
         // Start the listeners
         for (Listener listener : listeners) {
+            LOG.info("Starting {} listener.", listener.getName());
             listener.start();
         }
     }
@@ -137,12 +141,11 @@ public class Telemetryd implements SpringServiceDaemon {
         // Apply the parameters
         final BeanWrapper wrapper = PropertyAccessorFactory.forBeanPropertyAccess(listener);
         wrapper.setPropertyValues(toProperties(listenerDef.getParameters()));
-        return listener;
-    }
 
-    protected static Map<String, String> toProperties(List<Parameter> parameters) {
-        return parameters.stream().collect(
-                Collectors.toMap(Parameter::getKey, Parameter::getValue));
+        // Update the name
+        listener.setName(listenerDef.getName());
+
+        return listener;
     }
 
     @Override
@@ -150,6 +153,7 @@ public class Telemetryd implements SpringServiceDaemon {
         // Stop the consumers
         for (TelemetryMessageConsumer consumer : consumers) {
             try {
+                LOG.info("Starting consumer for {} protocol.", consumer.getProtocol().getName());
                 messageConsumerManager.unregisterConsumer(consumer);
             } catch (Exception e) {
                 LOG.error("Error while stopping consumer.", e);
@@ -160,9 +164,10 @@ public class Telemetryd implements SpringServiceDaemon {
         // Stop the listeners
         for (Listener listener : listeners) {
             try {
+                LOG.info("Stopping {} listener.", listener.getName());
                 listener.stop();
             } catch (InterruptedException e) {
-                LOG.error("Error while stopping listener.", e);
+                LOG.warn("Error while stopping listener.", e);
             }
         }
         listeners.clear();
@@ -172,4 +177,10 @@ public class Telemetryd implements SpringServiceDaemon {
     public void afterPropertiesSet() {
         // pass
     }
+
+    protected static Map<String, String> toProperties(List<Parameter> parameters) {
+        return parameters.stream().collect(
+                Collectors.toMap(Parameter::getKey, Parameter::getValue));
+    }
+
 }

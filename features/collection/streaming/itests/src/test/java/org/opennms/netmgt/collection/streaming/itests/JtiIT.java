@@ -151,8 +151,11 @@ public class JtiIT {
 
     @Test
     public void canReceivedAndPersistJtiMessages() throws Exception {
+        // TODO: FIXME: Use dynamic port
+        final int port = 50001;
+
         // Use our custom configuration
-        updateDaoWithConfig(getConfig());
+        updateDaoWithConfig(getConfig(port));
 
         // Start the daemon
         telemetryd.start();
@@ -160,7 +163,7 @@ public class JtiIT {
         // Send a JTI payload via a UDP socket
         final byte[] jtiMsgBytes = Resources.toByteArray(Resources.getResource("jti_15.1F4_ifd_ae_40000.raw"));
         InetAddress address = InetAddressUtils.getLocalHostAddress();
-        DatagramPacket packet = new DatagramPacket(jtiMsgBytes, jtiMsgBytes.length, address, 50000);
+        DatagramPacket packet = new DatagramPacket(jtiMsgBytes, jtiMsgBytes.length, address, port);
         DatagramSocket socket = new DatagramSocket();
         socket.send(packet);
 
@@ -177,7 +180,7 @@ public class JtiIT {
         telemetrydConfigDao.afterPropertiesSet();
     }
 
-    private TelemetrydConfiguration getConfig() {
+    private TelemetrydConfiguration getConfig(int port) {
         TelemetrydConfiguration telemetrydConfig = new TelemetrydConfiguration();
 
         Protocol jtiProtocol = new Protocol();
@@ -186,23 +189,10 @@ public class JtiIT {
         telemetrydConfig.getProtocols().add(jtiProtocol);
 
         Listener udpListener = new Listener();
-        udpListener.setName("JTI-UDP-50000");
+        udpListener.setName("JTI-UDP-" + port);
         udpListener.setClassName(UdpListener.class.getCanonicalName());
-        // TODO: FIXME: Use dynamic port
-        udpListener.getParameters().add(new Parameter("port", "50000"));
+        udpListener.getParameters().add(new Parameter("port", Integer.toString(port)));
         jtiProtocol.getListeners().add(udpListener);
-
-        Package jtiDefaultPkg = new Package();
-        jtiDefaultPkg.setName("JTI-Default");
-        // TODO: FIXME: Use a filter
-        //jtiDefaultPkg.setFilter(new Filter("IPADDR != '0.0.0.0'"));
-        jtiProtocol.getPackages().add(jtiDefaultPkg);
-
-        Rrd rrd = new Rrd();
-        rrd.setStep(300);
-        rrd.setBaseDir(rrdBaseDir.getAbsolutePath());
-        rrd.getRras().add("RRA:AVERAGE:0.5:1:2016");
-        jtiDefaultPkg.setRrd(rrd);
 
         Adapter jtiGbpAdapter = new Adapter();
         jtiGbpAdapter.setName("JTI-GBP");
@@ -212,7 +202,18 @@ public class JtiIT {
                 "etc", "telemetryd-adapters", "junos-telemetry-interface.groovy").toFile();
         assertTrue("Can't read: " + script.getAbsolutePath(), script.canRead());
         jtiGbpAdapter.getParameters().add(new Parameter("script", script.getAbsolutePath()));
-        jtiDefaultPkg.getAdapters().add(jtiGbpAdapter);
+        jtiProtocol.getAdapters().add(jtiGbpAdapter);
+
+        Package jtiDefaultPkg = new Package();
+        jtiDefaultPkg.setName("JTI-Default");
+        jtiDefaultPkg.setFilter(new Filter("IPADDR != '0.0.0.0'"));
+        jtiProtocol.getPackages().add(jtiDefaultPkg);
+
+        Rrd rrd = new Rrd();
+        rrd.setStep(300);
+        rrd.setBaseDir(rrdBaseDir.getAbsolutePath());
+        rrd.getRras().add("RRA:AVERAGE:0.5:1:2016");
+        jtiDefaultPkg.setRrd(rrd);
 
         return telemetrydConfig;
     }

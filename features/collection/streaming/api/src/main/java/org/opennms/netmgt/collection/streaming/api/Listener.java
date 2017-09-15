@@ -38,6 +38,10 @@ package org.opennms.netmgt.collection.streaming.api;
  */
 public interface Listener {
 
+    void setName(String name);
+
+    String getName();
+
     void start() throws InterruptedException;
 
     void stop() throws InterruptedException;

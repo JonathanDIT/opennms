@@ -58,6 +58,8 @@ public class Protocol implements TelemetryProtocol {
     private Integer queueSize;
     @XmlElement(name="listener")
     private List<Listener> listeners = new ArrayList<>();
+    @XmlElement(name="adapter")
+    private List<Adapter> adapters = new ArrayList<>();
     @XmlElement(name="package")
     private List<Package> packages = new ArrayList<>();
 
@@ -130,6 +132,14 @@ public class Protocol implements TelemetryProtocol {
         this.listeners = listeners;
     }
 
+    public List<Adapter> getAdapters() {
+        return adapters;
+    }
+
+    public void setAdapters(List<Adapter> adapters) {
+        this.adapters = adapters;
+    }
+
     public List<Package> getPackages() {
         return packages;
     }
@@ -151,12 +161,13 @@ public class Protocol implements TelemetryProtocol {
                 Objects.equals(batchIntervalMs, protocol.batchIntervalMs) &&
                 Objects.equals(queueSize, protocol.queueSize) &&
                 Objects.equals(listeners, protocol.listeners) &&
+                Objects.equals(adapters, protocol.adapters) &&
                 Objects.equals(packages, protocol.packages);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, enabled, numThreads, batchSize, batchIntervalMs, queueSize, listeners, packages);
+        return Objects.hash(name, description, enabled, numThreads, batchSize, batchIntervalMs, queueSize, listeners, adapters, packages);
     }
 
     @Override
@@ -170,6 +181,7 @@ public class Protocol implements TelemetryProtocol {
                 ", batchIntervalMs=" + batchIntervalMs +
                 ", queueSize=" + queueSize +
                 ", listeners=" + listeners +
+                ", adapters=" + adapters +
                 ", packages=" + packages +
                 '}';
     }

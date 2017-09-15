@@ -28,37 +28,43 @@
 
 package org.opennms.netmgt.collection.streaming.jti;
 
-import com.google.common.io.Resources;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.opennms.netmgt.collection.streaming.jti.proto.LogicalPortOuterClass;
+import org.opennms.core.utils.InetAddressUtils;
 import org.opennms.netmgt.collection.streaming.jti.proto.Port;
 import org.opennms.netmgt.collection.streaming.jti.proto.TelemetryTop;
 
 import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.util.Date;
 
-import static org.junit.Assert.assertEquals;
+public class JtiClient {
 
-public class JtiBuilderTest {
-
-    @Test
-    @Ignore
-    public void canRebuildJtiMessage() throws IOException {
-        final byte[] jtiMsgBytes = Resources.toByteArray(Resources.getResource("jti_15.1F4_ifd_ae_40000.raw"));
-        System.err.println(jtiMsgBytes.length + " bytes");
-        final TelemetryTop.TelemetryStream expectedJtiMsg = TelemetryTop.TelemetryStream.parseFrom(jtiMsgBytes, JtiGpbAdapter.s_registry);
-
+    private static TelemetryTop.TelemetryStream buildJtiMessage(String ipAddress, String ifName, long ifInOctets, long ifOutOctets) {
         final Port.GPort port = Port.GPort.newBuilder()
                 .addInterfaceStats(Port.InterfaceInfos.newBuilder()
-                        .setIfName("ge-0/0/0")
+                        .setIfName(ifName)
                         .setInitTime(1457647123)
                         .setSnmpIfIndex(517)
                         .setParentAeName("ae0")
                         .setIngressStats(Port.InterfaceStats.newBuilder()
-                                .setIfOctets(1)
+                                .setIfOctets(ifInOctets)
+                                .setIfPkts(1)
+                                .setIf1SecPkts(1)
+                                .setIf1SecOctets(1)
+                                .setIfUcPkts(1)
+                                .setIfMcPkts(1)
+                                .setIfBcPkts(1)
                                 .build())
                         .setEgressStats(Port.InterfaceStats.newBuilder()
-                                .setIfOctets(1)
+                                .setIfOctets(ifOutOctets)
+                                .setIfPkts(1)
+                                .setIf1SecPkts(1)
+                                .setIf1SecOctets(1)
+                                .setIfUcPkts(1)
+                                .setIfMcPkts(1)
+                                .setIfBcPkts(1)
                                 .build())
                         .build())
                 .build();
@@ -72,14 +78,25 @@ public class JtiBuilderTest {
                 .build();
 
         final TelemetryTop.TelemetryStream jtiMsg = TelemetryTop.TelemetryStream.newBuilder()
-                .setSystemId("192.0.2.1")
+                .setSystemId(ipAddress)
                 .setComponentId(0)
                 .setSensorName("intf-stats")
                 .setSequenceNumber(49103)
-                .setTimestamp(1458634993)
+                .setTimestamp(new Date().getTime())
                 .setEnterprise(sensors)
                 .build();
 
-        assertEquals(expectedJtiMsg, jtiMsg);
+        return jtiMsg;
+    }
+
+    public static void main(String... args) throws IOException {
+        // ./bin/send-event.pl --interface 192.168.2.1 uei.opennms.org/internal/discovery/newSuspect
+        TelemetryTop.TelemetryStream jtiMsg = buildJtiMessage("192.168.2.1", "eth0", 100, 100);
+        byte[] jtiMsgBytes = jtiMsg.toByteArray();
+
+        InetAddress address = InetAddressUtils.getLocalHostAddress();
+        DatagramPacket packet = new DatagramPacket(jtiMsgBytes, jtiMsgBytes.length, address, 50000);
+        DatagramSocket socket = new DatagramSocket();
+        socket.send(packet);
     }
 }

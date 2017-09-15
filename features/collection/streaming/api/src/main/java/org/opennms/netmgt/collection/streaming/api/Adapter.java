@@ -42,6 +42,6 @@ import java.io.IOException;
  */
 public interface Adapter {
 
-    CollectionSet convertToCollectionSet(TelemetryMessageLogDTO messageLog, TelemetryMessageDTO message) throws Exception;
+    AdapterResult handleMessage(TelemetryMessageLogDTO messageLog, TelemetryMessageDTO message) throws Exception;
 
 }

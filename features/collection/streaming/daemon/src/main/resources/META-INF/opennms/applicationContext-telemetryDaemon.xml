@@ -16,13 +16,8 @@
   <context:annotation-config />
   <tx:annotation-driven/>
 
-  <!-- TelemetrydConfiguration -->
-  <bean id="telemetrydConfigResourceLocation" class="java.lang.String">
-    <constructor-arg value="file:${opennms.home}/etc/telemetryd-configuration.xml" />
-  </bean>
-
   <bean id="telemetrydConfigDao" class="org.opennms.netmgt.collection.streaming.config.TelemetrydConfigDao">
-    <property name="configResource" ref="telemetrydConfigResourceLocation" />
+    <property name="configResource" value="file:${opennms.home}/etc/telemetryd-configuration.xml" />
   </bean>
 
   <!-- Duplicated from the collectd context -->

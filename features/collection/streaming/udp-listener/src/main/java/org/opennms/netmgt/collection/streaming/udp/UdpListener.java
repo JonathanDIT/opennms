@@ -55,6 +55,7 @@ public class UdpListener implements Listener {
     private static final Logger LOG = LoggerFactory.getLogger(UdpListener.class);
 
     private final AsyncDispatcher<TelemetryMessage> dispatcher;
+    private String name;
     private EventLoopGroup bossGroup;
     private ChannelFuture future;
 
@@ -111,5 +112,15 @@ public class UdpListener implements Listener {
 
     public int getPort() {
         return port;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
     }
 }

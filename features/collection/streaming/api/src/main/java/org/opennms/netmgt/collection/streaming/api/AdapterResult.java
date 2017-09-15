@@ -28,10 +28,26 @@
 
 package org.opennms.netmgt.collection.streaming.api;
 
-public class InvalidMessageException extends Exception {
-    static final long serialVersionUID = 1L;
+import org.opennms.netmgt.collection.api.CollectionAgent;
+import org.opennms.netmgt.collection.api.CollectionSet;
 
-    public InvalidMessageException(String message, Throwable cause) {
-        super(message, cause);
+import java.util.Collection;
+import java.util.Objects;
+
+public class AdapterResult {
+    private final CollectionAgent agent;
+    private final CollectionSet collectionSet;
+
+    public AdapterResult(CollectionAgent agent, CollectionSet collectionSet) {
+        this.agent = Objects.requireNonNull(agent);
+        this.collectionSet = Objects.requireNonNull(collectionSet);
+    }
+
+    public CollectionAgent getAgent() {
+        return agent;
+    }
+
+    public CollectionSet getCollectionSet() {
+        return collectionSet;
     }
 }

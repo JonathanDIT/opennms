@@ -43,7 +43,7 @@ import org.opennms.netmgt.collection.api.CollectionAgentFactory;
 import org.opennms.netmgt.collection.api.CollectionSet;
 import org.opennms.netmgt.collection.dto.CollectionAgentDTO;
 import org.opennms.netmgt.collection.streaming.api.Adapter;
-import org.opennms.netmgt.collection.streaming.api.InvalidMessageException;
+import org.opennms.netmgt.collection.streaming.api.AdapterResult;
 import org.opennms.netmgt.collection.streaming.jti.proto.CpuMemoryUtilizationOuterClass;
 import org.opennms.netmgt.collection.streaming.jti.proto.FirewallOuterClass;
 import org.opennms.netmgt.collection.streaming.jti.proto.LogicalPortOuterClass;
@@ -61,9 +61,18 @@ import org.opennms.netmgt.dao.api.DistPollerDao;
 import org.opennms.netmgt.dao.api.InterfaceToNodeCache;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.annotation.PostConstruct;
+import javax.script.Compilable;
+import javax.script.CompiledScript;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.SimpleBindings;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
+import com.google.common.io.Files;
 
 public class JtiGpbAdapter implements Adapter {
 
@@ -90,14 +99,38 @@ public class JtiGpbAdapter implements Adapter {
 
     private String script;
 
-    @Override
-    public CollectionSet convertToCollectionSet(TelemetryMessageLogDTO messageLog, TelemetryMessageDTO message) throws Exception {
-        final TelemetryTop.TelemetryStream jtiMsg;
-        try {
-            jtiMsg = TelemetryTop.TelemetryStream.parseFrom(message.getBytes().array(), s_registry);
-        } catch (InvalidProtocolBufferException e) {
-            throw new InvalidMessageException("Oops", e);
+    private CompiledScript compiledScript;
+
+    @PostConstruct
+    public void setUp() throws IOException, javax.script.ScriptException {
+        if (script == null) {
+            throw new IllegalStateException("'script' parameters is required for " + JtiGpbAdapter.class.getCanonicalName());
         }
+
+        final File scriptFile = new File(script);
+        if (!scriptFile.canRead()) {
+            throw new IllegalStateException("Cannot read script at '" + scriptFile + "'.");
+        }
+
+        final String ext = Files.getFileExtension(script);
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByExtension(ext);
+        if (engine == null) {
+            throw new IllegalStateException("No engine found for extension: " + ext);
+        }
+
+        if (!(engine instanceof Compilable)) {
+            throw new IllegalStateException("Only engines that can compile scripts are supported.");
+        }
+        final Compilable compilable = (Compilable) engine;
+        try (FileReader reader = new FileReader(scriptFile)) {
+            compiledScript = compilable.compile(reader);
+        }
+    }
+
+    @Override
+    public AdapterResult handleMessage(TelemetryMessageLogDTO messageLog, TelemetryMessageDTO message) throws Exception {
+        final TelemetryTop.TelemetryStream jtiMsg = TelemetryTop.TelemetryStream.parseFrom(message.getBytes().array(), s_registry);
 
         // NOTE: In the messages we've seen so far the system id is set to an IP address
         // so we use this to help identify the node, leverage the InterfaceToNodeCache implementation
@@ -108,27 +141,13 @@ public class JtiGpbAdapter implements Adapter {
 
         CollectionSetBuilder builder = new CollectionSetBuilder(agent);
 
-        /*
-        final NodeLevelResource nodeLevelResource = new NodeLevelResource(nodeId);
-        final TelemetryTop.EnterpriseSensors sensors = jtiMsg.getEnterprise();
-        final TelemetryTop.JuniperNetworksSensors s = sensors.getExtension(TelemetryTop.juniperNetworks);
-        final Port.GPort port = s.getExtension(Port.jnprInterfaceExt);
-        for (Port.InterfaceInfos interfaceInfos : port.getInterfaceStatsList()) {
-            InterfaceLevelResource interfaceResource = new InterfaceLevelResource(nodeLevelResource, interfaceInfos.getIfName());
-            builder.withNumericAttribute(interfaceResource, "mib2-interfaces", "ifInOctets", interfaceInfos.getIngressStats().getIfOctets(), AttributeType.COUNTER);
-            builder.withNumericAttribute(interfaceResource, "mib2-interfaces", "ifOutOctets", interfaceInfos.getEgressStats().getIfOctets(), AttributeType.COUNTER);
-        }
-        */
+        final SimpleBindings globals = new SimpleBindings();
+        globals.put("agent", agent);
+        globals.put("builder", builder);
+        globals.put("msg", jtiMsg);
+        compiledScript.eval(globals);
 
-        File scriptFile = new File(script);
-        GroovyScriptEngine gse = new GroovyScriptEngine(scriptFile.getParentFile().getAbsolutePath());
-        Binding binding = new Binding();
-        binding.setVariable("agent", agent);
-        binding.setVariable("builder", builder);
-        binding.setVariable("msg", jtiMsg);
-        gse.run(scriptFile.getName(), binding);
-
-        return builder.build();
+        return new AdapterResult(agent, builder.build());
     }
 
     public String getScript() {
