@@ -1070,11 +1070,4 @@
       <bundle>mvn:org.opennms.features.poller/org.opennms.features.poller.shell/${project.version}</bundle>
     </feature>
 
-    <feature name="collection-streaming-jti" description="collection-streaming-jti" version="${project.version}">
-      <!-- Not fully needed, but a convenient way to install netty4 -->
-      <feature>camel-netty4</feature>
-      <bundle>mvn:com.google.protobuf/protobuf-java/${protobufVersion}</bundle>
-      <bundle>mvn:org.opennms.features.collection.streaming/org.opennms.features.collection.streaming.jti/${project.version}</bundle>
-    </feature>
-
 </features>

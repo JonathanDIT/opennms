@@ -16,6 +16,7 @@
     <module>ipc</module>
     <module>itests</module>
     <module>jti-adapter</module>
+    <module>minion</module>
     <module>udp-listener</module>
   </modules>
 </project>

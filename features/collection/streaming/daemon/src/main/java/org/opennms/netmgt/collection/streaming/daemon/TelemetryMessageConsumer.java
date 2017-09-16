@@ -33,6 +33,7 @@ import com.google.common.cache.LoadingCache;
 import org.opennms.core.ipc.sink.api.MessageConsumer;
 import org.opennms.core.ipc.sink.api.MessageConsumerManager;
 import org.opennms.core.ipc.sink.api.SinkModule;
+import org.opennms.core.logging.Logging;
 import org.opennms.core.utils.InetAddressUtils;
 import org.opennms.netmgt.collection.api.CollectionAgent;
 import org.opennms.netmgt.collection.api.CollectionSet;
@@ -121,35 +122,37 @@ public class TelemetryMessageConsumer implements MessageConsumer<TelemetryMessag
 
     @Override
     public void handleMessage(TelemetryMessageLogDTO messageLog) {
-        LOG.trace("Received message log: {}", messageLog);
-        // Handle the message with all of the adapters
-        for (Adapter adapter : adapters) {
-            for (TelemetryMessageDTO message : messageLog.getMessages()) {
-                final AdapterResult result;
-                try {
-                    result = adapter.handleMessage(messageLog, message);
-                } catch (Exception e) {
-                    LOG.warn("Failed to handle message: {}. Skipping.", message, e);
-                    continue;
+        try(Logging.MDCCloseable mdc = Logging.withPrefixCloseable(Telemetryd.LOG_PREFIX)) {
+            LOG.trace("Received message log: {}", messageLog);
+            // Handle the message with all of the adapters
+            for (Adapter adapter : adapters) {
+                for (TelemetryMessageDTO message : messageLog.getMessages()) {
+                    final AdapterResult result;
+                    try {
+                        result = adapter.handleMessage(messageLog, message);
+                    } catch (Exception e) {
+                        LOG.warn("Failed to handle message: {}. Skipping.", message, e);
+                        continue;
+                    }
+
+                    // Locate the matching package definition
+                    final Package pkg = getPackageFor(result.getAgent());
+                    if (pkg == null) {
+                        LOG.warn("No matching package found for message: {}. Skipping.", message);
+                        return;
+                    }
+
+                    // Build the repository from the package definition
+                    final RrdRepository repository = new RrdRepository();
+                    repository.setStep(pkg.getRrd().getStep());
+                    repository.setHeartBeat(repository.getStep() * 2);
+                    repository.setRraList(pkg.getRrd().getRras());
+                    repository.setRrdBaseDir(new File(pkg.getRrd().getBaseDir()));
+
+                    // Persist!
+                    final Persister persister = persisterFactory.createPersister(EMPTY_SERVICE_PARAMETERS, repository);
+                    result.getCollectionSet().visit(persister);
                 }
-
-                // Locate the matching package definition
-                final Package pkg = getPackageFor(result.getAgent());
-                if (pkg == null) {
-                    LOG.warn("No matching package found for message: {}. Skipping.", message);
-                    return;
-                }
-
-                // Build the repository from the package definition
-                final RrdRepository repository = new RrdRepository();
-                repository.setStep(pkg.getRrd().getStep());
-                repository.setHeartBeat(repository.getStep() * 2);
-                repository.setRraList(pkg.getRrd().getRras());
-                repository.setRrdBaseDir(new File(pkg.getRrd().getBaseDir()));
-
-                // Persist!
-                final Persister persister = persisterFactory.createPersister(EMPTY_SERVICE_PARAMETERS, repository);
-                result.getCollectionSet().visit(persister);
             }
         }
     }

@@ -117,4 +117,12 @@ public class TelemetrySinkModule extends AbstractXmlSinkModule<TelemetryMessage,
             }
         };
     }
+
+    public DistPollerDao getDistPollerDao() {
+        return distPollerDao;
+    }
+
+    public void setDistPollerDao(DistPollerDao distPollerDao) {
+        this.distPollerDao = distPollerDao;
+    }
 }

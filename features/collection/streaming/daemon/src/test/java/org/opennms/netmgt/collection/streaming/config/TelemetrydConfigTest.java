@@ -59,9 +59,9 @@ public class TelemetrydConfigTest extends XmlTestNoCastor<TelemetrydConfiguratio
         jtiProtocol.getListeners().add(udpListener);
 
         Adapter jtiGbpAdapter = new Adapter();
-        jtiGbpAdapter.setName("JTI-GBP");
-        jtiGbpAdapter.setClassName("org.opennms.netmgt.collection.streaming.jti.JtiGbpAdapter");
-        jtiGbpAdapter.getParameters().add(new Parameter("script", "${install.dir}/etc/streaming-telemetry-adapters/jti.groovy"));
+        jtiGbpAdapter.setName("JTI-GPB");
+        jtiGbpAdapter.setClassName("org.opennms.netmgt.collection.streaming.jti.JtiGpbAdapter");
+        jtiGbpAdapter.getParameters().add(new Parameter("script", "${install.dir}/etc/telemetryd-adapters/junos-telemetry-interface.groovy"));
         jtiProtocol.getAdapters().add(jtiGbpAdapter);
 
         Package jtiDefaultPkg = new Package();
@@ -81,7 +81,7 @@ public class TelemetrydConfigTest extends XmlTestNoCastor<TelemetrydConfiguratio
         return Arrays.asList(new Object[][] { {
                 telemetrydConfig,
                 "<telemetryd-config>\n" +
-                "  <protocol name=\"JTI\" description=\"Junos Telemetry Interface (JTI)\">\n" +
+                "  <protocol name=\"JTI\" description=\"Junos Telemetry Interface (JTI)\" enabled=\"false\">\n" +
                 "    <listener name=\"JTI-UDP-50000\" class-name=\"org.opennms.netmgt.collection.streaming.udp.UdpListener\">\n" +
                 "      <parameter key=\"port\" value=\"50000\"/>\n" +
                 "    </listener>\n" +

@@ -7,8 +7,8 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.opennms.features.collection.streaming</groupId>
-  <artifactId>org.opennms.features.collection.streaming.udp-listener</artifactId>
-  <name>OpenNMS :: Features :: Collection :: Streaming :: UDP Listener</name>
+  <artifactId>org.opennms.features.collection.streaming.minion</artifactId>
+  <name>OpenNMS :: Features :: Collection :: Streaming :: Minion</name>
   <packaging>bundle</packaging>
   <build>
     <plugins>
@@ -29,12 +29,13 @@
   <dependencies>
     <dependency>
       <groupId>org.opennms.features.collection.streaming</groupId>
-      <artifactId>org.opennms.features.collection.streaming.api</artifactId>
+      <artifactId>org.opennms.features.collection.streaming.udp-listener</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-all</artifactId>
+      <groupId>org.opennms.features.collection.streaming</groupId>
+      <artifactId>org.opennms.features.collection.streaming.ipc</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.osgi</groupId>
