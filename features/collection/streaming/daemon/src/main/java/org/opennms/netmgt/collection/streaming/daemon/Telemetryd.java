@@ -41,12 +41,19 @@ import org.opennms.netmgt.collection.streaming.ipc.TelemetrySinkModule;
 import org.opennms.netmgt.collection.streaming.model.TelemetryMessage;
 import org.opennms.netmgt.daemon.SpringServiceDaemon;
 import org.opennms.netmgt.dao.api.DistPollerDao;
+import org.opennms.netmgt.events.api.EventConstants;
+import org.opennms.netmgt.events.api.EventIpcManager;
+import org.opennms.netmgt.events.api.annotations.EventHandler;
 import org.opennms.netmgt.events.api.annotations.EventListener;
+import org.opennms.netmgt.model.events.EventBuilder;
+import org.opennms.netmgt.xml.event.Event;
+import org.opennms.netmgt.xml.event.Parm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 
@@ -73,6 +80,10 @@ public class Telemetryd implements SpringServiceDaemon {
     private TelemetrydConfigDao telemetrydConfigDao;
 
     @Autowired
+    @Qualifier("eventIpcManager")
+    private EventIpcManager eventIpcManager;
+
+    @Autowired
     private DistPollerDao distPollerDao;
 
     @Autowired
@@ -85,6 +96,7 @@ public class Telemetryd implements SpringServiceDaemon {
     private ApplicationContext applicationContext;
 
     private List<TelemetryMessageConsumer> consumers = new ArrayList<>();
+    private List<AsyncDispatcher<?>> dispatchers = new ArrayList<>();
     private List<Listener> listeners = new ArrayList<>();
 
     @Override
@@ -92,6 +104,7 @@ public class Telemetryd implements SpringServiceDaemon {
         if (consumers.size() > 0) {
             throw new IllegalStateException(NAME + " is already started.");
         }
+        LOG.info("{} is starting.", NAME);
         final TelemetrydConfiguration config = telemetrydConfigDao.getContainer().getObject();
         final AutowireCapableBeanFactory beanFactory = applicationContext.getAutowireCapableBeanFactory();
 
@@ -112,6 +125,8 @@ public class Telemetryd implements SpringServiceDaemon {
             consumers.add(consumer);
 
             final AsyncDispatcher<TelemetryMessage> dispatcher = messageDispatcherFactory.createAsyncDispatcher(sinkModule);
+            dispatchers.add(dispatcher);
+
             for (org.opennms.netmgt.collection.streaming.config.Listener listenerDef : protocol.getListeners()) {
                 final Listener listener = buildListener(listenerDef, dispatcher);
                 listeners.add(listener);
@@ -129,6 +144,8 @@ public class Telemetryd implements SpringServiceDaemon {
             LOG.info("Starting {} listener.", listener.getName());
             listener.start();
         }
+
+        LOG.info("{} is started.", NAME);
     }
 
     protected static Listener buildListener(org.opennms.netmgt.collection.streaming.config.Listener listenerDef, AsyncDispatcher<TelemetryMessage> dispatcher) throws Exception {
@@ -155,16 +172,7 @@ public class Telemetryd implements SpringServiceDaemon {
 
     @Override
     public synchronized void destroy() {
-        // Stop the consumers
-        for (TelemetryMessageConsumer consumer : consumers) {
-            try {
-                LOG.info("Starting consumer for {} protocol.", consumer.getProtocol().getName());
-                messageConsumerManager.unregisterConsumer(consumer);
-            } catch (Exception e) {
-                LOG.error("Error while stopping consumer.", e);
-            }
-        }
-        consumers.clear();
+        LOG.info("{} is stopping.", NAME);
 
         // Stop the listeners
         for (Listener listener : listeners) {
@@ -176,11 +184,71 @@ public class Telemetryd implements SpringServiceDaemon {
             }
         }
         listeners.clear();
+
+        // Stop the dispatchers
+        for (AsyncDispatcher<?> dispatcher : dispatchers) {
+            try {
+                LOG.debug("Closing dispatcher.", dispatcher);
+            } catch (Exception e) {
+                LOG.warn("Error while closing dispatcher.", e);
+            }
+        }
+        listeners.clear();
+
+        // Stop the consumers
+        for (TelemetryMessageConsumer consumer : consumers) {
+            try {
+                LOG.info("Stopping consumer for {} protocol.", consumer.getProtocol().getName());
+                messageConsumerManager.unregisterConsumer(consumer);
+            } catch (Exception e) {
+                LOG.error("Error while stopping consumer.", e);
+            }
+        }
+        consumers.clear();
+
+        LOG.info("{} is stopped.", NAME);
     }
 
     @Override
     public void afterPropertiesSet() {
         // pass
+    }
+
+    private synchronized void handleConfigurationChanged() throws Exception {
+        destroy();
+        start();
+    }
+
+    // TODO: Refactor this boilerplate code, shared with BSMD
+    @EventHandler(uei = EventConstants.RELOAD_DAEMON_CONFIG_UEI)
+    public void handleReloadEvent(Event e) {
+        LOG.info("Received a reload configuration event: {}", e);
+
+        final Parm daemonNameParm = e.getParm(EventConstants.PARM_DAEMON_NAME);
+        if (daemonNameParm == null || daemonNameParm.getValue() == null) {
+            LOG.warn("The {} parameter has no value. Ignoring.", EventConstants.PARM_DAEMON_NAME);
+            return;
+        }
+
+        if (NAME.equalsIgnoreCase(daemonNameParm.getValue().getContent())) {
+            LOG.info("Reloading {}.", Telemetryd.NAME);
+
+            EventBuilder ebldr = null;
+            try {
+                handleConfigurationChanged();
+
+                ebldr = new EventBuilder(EventConstants.RELOAD_DAEMON_CONFIG_SUCCESSFUL_UEI, NAME);
+                ebldr.addParam(EventConstants.PARM_DAEMON_NAME, NAME);
+                LOG.info("Reload successful.");
+            } catch (Throwable t) {
+                ebldr = new EventBuilder(EventConstants.RELOAD_DAEMON_CONFIG_FAILED_UEI, NAME);
+                ebldr.addParam(EventConstants.PARM_REASON, t.getLocalizedMessage().substring(0, 128));
+                LOG.error("Reload failed.", t);
+            }
+
+            ebldr.addParam(EventConstants.PARM_DAEMON_NAME, NAME);
+            eventIpcManager.sendNow(ebldr.getEvent());
+        }
     }
 
     protected static Map<String, String> toProperties(List<Parameter> parameters) {
