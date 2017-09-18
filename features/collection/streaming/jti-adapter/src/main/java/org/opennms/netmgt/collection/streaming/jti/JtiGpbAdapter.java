@@ -135,7 +135,10 @@ public class JtiGpbAdapter implements Adapter {
         // NOTE: In the messages we've seen so far the system id is set to an IP address
         // so we use this to help identify the node, leverage the InterfaceToNodeCache implementation
         final InetAddress inetAddress = InetAddressUtils.addr(jtiMsg.getSystemId());
-        final int nodeId = interfaceToNodeCache.getNodeId(messageLog.getLocation(), InetAddressUtils.addr(jtiMsg.getSystemId()));
+        final int nodeId = interfaceToNodeCache.getNodeId(messageLog.getLocation(), inetAddress);
+        if (nodeId < 0) {
+            throw new IllegalArgumentException(String.format("No node found with IP address: %s at location: %s", InetAddressUtils.str(inetAddress), messageLog.getLocation()));
+        }
         // NOTE: This will throw a IllegalArgumentException if the nodeId/inetAddress pair does not exist in the database
         final CollectionAgent agent = collectionAgentFactory.createCollectionAgent(Integer.toString(nodeId), inetAddress);
 
