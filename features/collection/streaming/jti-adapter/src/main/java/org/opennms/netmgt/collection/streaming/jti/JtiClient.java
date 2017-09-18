@@ -95,7 +95,7 @@ public class JtiClient {
         byte[] jtiMsgBytes = jtiMsg.toByteArray();
 
         InetAddress address = InetAddressUtils.getLocalHostAddress();
-        DatagramPacket packet = new DatagramPacket(jtiMsgBytes, jtiMsgBytes.length, address, 50002);
+        DatagramPacket packet = new DatagramPacket(jtiMsgBytes, jtiMsgBytes.length, address, 50000);
         DatagramSocket socket = new DatagramSocket();
         socket.send(packet);
     }

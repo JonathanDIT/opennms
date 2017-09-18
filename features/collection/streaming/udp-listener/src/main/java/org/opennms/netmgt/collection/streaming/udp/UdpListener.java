@@ -30,12 +30,15 @@ package org.opennms.netmgt.collection.streaming.udp;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.AdaptiveRecvByteBufAllocator;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
@@ -50,6 +53,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 public class UdpListener implements Listener {
     private static final Logger LOG = LoggerFactory.getLogger(UdpListener.class);
@@ -72,6 +76,8 @@ public class UdpListener implements Listener {
                 .channel(NioDatagramChannel.class)
                 .option(ChannelOption.SO_REUSEADDR, true)
                 .option(ChannelOption.SO_RCVBUF, Integer.MAX_VALUE)
+                // TODO: Make this configurable
+                .option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(8096))
                 .handler(new ChannelInitializer<DatagramChannel>() {
                     @Override
                     protected void initChannel(DatagramChannel ch) throws Exception {
@@ -79,18 +85,16 @@ public class UdpListener implements Listener {
                         p.addLast(new MessageToMessageDecoder<DatagramPacket>() {
                             @Override
                             protected void decode(ChannelHandlerContext ctx, DatagramPacket packet, List<Object> out) throws Exception {
-                                // TODO: FIXME: May not need to duplicate buffer
-                                ByteBuffer bufferCopy = ByteBuffer.allocate(packet.content().readableBytes());
-                                packet.content().getBytes(packet.content().readerIndex(), bufferCopy);
-                                final TelemetryMessage msg = new TelemetryMessage(packet.sender(), bufferCopy);
-                                dispatcher.send(msg);
-
-                                /*
-                                final DatagramPacket pkt = packet;
-                                final TelemetryMessage msg = new TelemetryMessage(packet.sender(), packet.content().nioBuffer());
+                                // Wrap the contents of the packet in a ByteBuffer, referencing
+                                // the underlying byte array if possible
+                                final ByteBuffer buffer = wrapContentsWithNioByteBuffer(packet);
+                                // Build the message to dispatch via the Sink API
+                                final TelemetryMessage msg = new TelemetryMessage(packet.sender(), buffer);
+                                // Dispatch and retain a reference to the packet
+                                // in the case that we are sharing the underlying byte array
+                                final CompletableFuture<TelemetryMessage> future = dispatcher.send(msg);
                                 packet.retain();
-                                dispatcher.send(msg).whenComplete((res,ex) -> pkt.release());
-                                */
+                                future.whenComplete((res,ex) -> packet.release());
                             }
                         });
                     }
@@ -122,5 +126,21 @@ public class UdpListener implements Listener {
     @Override
     public void setName(String name) {
         this.name = name;
+    }
+
+    protected static ByteBuffer wrapContentsWithNioByteBuffer(DatagramPacket packet) {
+        final ByteBuf content = packet.content();
+        final int length = content.readableBytes();
+        final byte[] array;
+        final int offset;
+        if (content.hasArray()) {
+            array = content.array();
+            offset = content.arrayOffset() + content.readerIndex();
+        } else {
+            array = new byte[length];
+            content.getBytes(content.readerIndex(), array, 0, length);
+            offset = 0;
+        }
+        return ByteBuffer.wrap(array, offset, length);
     }
 }
