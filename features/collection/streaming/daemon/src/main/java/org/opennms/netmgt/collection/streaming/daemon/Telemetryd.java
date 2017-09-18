@@ -58,6 +58,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+/**
+ * TODO: Support daemonReload events: call destroy() and start()
+ */
 @EventListener(name=Telemetryd.NAME, logPrefix=Telemetryd.LOG_PREFIX)
 public class Telemetryd implements SpringServiceDaemon {
     private static final Logger LOG = LoggerFactory.getLogger(Telemetryd.class);

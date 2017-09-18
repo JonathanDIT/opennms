@@ -188,6 +188,10 @@ public class TelemetryMessageConsumer implements MessageConsumer<TelemetryMessag
                 return pkg;
             }
             final String filterRule = pkg.getFilter().getContent();
+            // TODO: This is really inefficient, since it actually retrieves *all*
+            // IP addresses that match the filter, and then checks of the given address
+            // is in the set.
+            // TODO: The location of the host address is not taken into account
             if (filterDao.isValid(agent.getHostAddress(), filterRule)) {
                 return pkg;
             }

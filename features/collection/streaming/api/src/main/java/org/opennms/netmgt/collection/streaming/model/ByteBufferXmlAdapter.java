@@ -31,6 +31,7 @@ package org.opennms.netmgt.collection.streaming.model;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 import java.nio.ByteBuffer;
 
+// TODO: Deduplicate from Syslog code
 public class ByteBufferXmlAdapter extends XmlAdapter<byte[], ByteBuffer> {
 
     @Override
