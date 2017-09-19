@@ -14,8 +14,8 @@
     <reference id="distPollerDao" interface="org.opennms.netmgt.dao.api.DistPollerDao"/>
     <reference id="messageDispatcherFactory" interface="org.opennms.core.ipc.sink.api.MessageDispatcherFactory" />
 
-    <bean id="listenerFactory" class="org.opennms.netmgt.collection.streaming.minion.ListenerFactory" init-method="init" destroy-method="stop">
-        <!-- <argument ref="blueprintBundleContext" /> -->
+    <bean id="listenerFactory" class="org.opennms.netmgt.collection.streaming.minion.ListenerFactory" destroy-method="destroy">
+        <property name="bundleContext" ref="blueprintBundleContext"/>
         <property name="distPollerDao" ref="distPollerDao"/>
         <property name="messageDispatcherFactory" ref="messageDispatcherFactory" />
     </bean>
